@@ -1,0 +1,19 @@
+# Ignore React dependencies
+Frontend/LibraryManagementSystem/node_modules/
+Frontend/LibraryManagementSystem/dist/
+
+# --- Spring Boot (Backend) ---
+Backend/LibraryManagementSystem/target/
+Backend/build/
+Backend/.idea/
+Backend/*.iml
+Backend/.settings/
+Backend/.project
+Backend/.classpath
+Backend/bin/
+Backend/LibraryManagementSystem/.mvn/wrapper/maven-wrapper.jar
+
+# --- Sensitive Info ---
+Backend/LibraryManagementSystem/src/main/resources/application-local.properties
+.env
+
