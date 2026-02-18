@@ -1,26 +1,46 @@
 import { useState } from 'react'
+import { ToastContainer ,Slide} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { BrowserRouter,Routes,Route,Navigate } from 'react-router-dom';
 import Login from './components/Login'
 import Register from './components/Register'
 import HomePage from './components/homePage';
 import Navbar from './components/NavBar';
 import AdminDashboard from './components/AdminDashboard';
+import UserProfile from './components/UserProfile';
+
+
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
     
-    <div className="container mt-4">
+   <div className="container-fluid p-0">
     <BrowserRouter>
     <Navbar />
     <Routes>
-       
-     <Route path="/login" element={<Login />} />
+    
+     <Route path="/" element={<Login />} />
      <Route path="/register" element={<Register />} />
-    <Route path="/" element={<HomePage />} />
+    <Route path="/home" element={<HomePage />} />
     <Route path="/admin" element={<AdminDashboard />} />
+    <Route path="/profile" element={<UserProfile />} />.
     </Routes>
+    <ToastContainer 
+        position="bottom-right"   // 2. Move to bottom
+        transition={Slide}        // 3. Set transition to Slide
+        autoClose={3000}
+        style={{ zIndex: 99999 }}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </BrowserRouter>
     </div>
    </>

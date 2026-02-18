@@ -1,10 +1,34 @@
-// src/components/AdminStats.jsx
-export default function AdminStats() {
+import { useState, useEffect } from 'react';
+import api from '../services/Service';
+export default function AdminStats({refreshTrigger}) {
+  
+  const [statsData, setStatsData] = useState({
+    totalBooks: 0,
+    issuedBooks: 0,
+    totalMembers: 0,
+    overdueBooks: 0
+  });
+
+  
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/stats');
+        setStatsData(response.data);
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    useEffect(() => {
+    fetchStats();
+  }, [refreshTrigger]);
+    // Reload stats whenever a book is added/deleted
+
   const stats = [
-    { label: 'Total Books', value: '1,240', color: 'primary', icon: '📚' },
-    { label: 'Issued Books', value: '450', color: 'warning', icon: '📖' },
-    { label: 'Total Members', value: '890', color: 'success', icon: '👥' },
-    { label: 'Overdue', value: '12', color: 'danger', icon: '⚠️' },
+    { label: 'Total Books', value: statsData.totalBooks, color: 'primary', icon: '📚' },
+    { label: 'Issued Books', value: statsData.issuedBooks, color: 'warning', icon: '📖' },
+    { label: 'Total Members', value: statsData.totalMembers, color: 'success', icon: '👥' },
+    { label: 'Overdue', value: statsData.overdueBooks, color: 'danger', icon: '⚠️' },
   ];
 
   return (

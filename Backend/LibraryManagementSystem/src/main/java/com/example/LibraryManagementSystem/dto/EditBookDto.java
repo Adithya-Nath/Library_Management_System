@@ -1,4 +1,4 @@
 package com.example.LibraryManagementSystem.dto;
 
-public class WaitlistDto {
+public class EditBookDto {
 }

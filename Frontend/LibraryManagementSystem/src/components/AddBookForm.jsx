@@ -1,46 +1,41 @@
-// src/components/AddBookForm.jsx
 import { useState } from 'react';
+import api from '../services/Service';
+import { toast } from 'react-toastify';
 
 export default function AddBookForm({ onAddBook }) {
-  // 1. Initial State for the form
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     title: '',
     author: '',
     isbn: '',
     category: 'General',
-    image:'',
+    image: '',
     description: ''
-  });
-
-  // 2. Handle input changes dynamically
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
   };
 
-  // 3. Handle Form Submission
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState(initialFormState);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Create the new book object
-    const newBook = {
+    const bookData = {
       ...formData,
-      id: Date.now(), // Temporary ID for frontend
-      isAvailable: true,
-      addedDate: new Date().toLocaleDateString()
+      authorName: formData.author,
+      isbn: parseInt(formData.isbn),
+      imageUrl: formData.image
     };
 
-    // Pass data up to the parent (AdminDashboard)
-    if (onAddBook) {
-      onAddBook(newBook);
+    try {
+      const response = await api.post('/addbook', bookData);
+      toast.success("Book added successfully! 📚");
+      if (onAddBook) onAddBook();
+      setFormData(initialFormState);
+    } catch (error) {
+      toast.error(error.response?.data || "Failed to save book.");
     }
-
-    // Reset form fields
-    setFormData({ title: '', author: '', isbn: '', category: 'General',image:'', description: '' });
-    alert("Book added successfully!");
   };
 
   return (
@@ -49,67 +44,33 @@ export default function AddBookForm({ onAddBook }) {
         <h5 className="mb-0">Add New Inventory</h5>
       </div>
       <div className="card-body p-4">
+        {/* Live Image Preview */}
+        {formData.image && (
+          <div className="text-center mb-3">
+            <img src={formData.image} alt="Preview" className="rounded shadow-sm" style={{ height: '120px' }} />
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
-          
           <div className="mb-3">
-            <label className="form-label fw-bold text-secondary">Book Title</label>
-            <input 
-              type="text" 
-              name="title"
-              className="form-control" 
-              placeholder="e.g. The Art of Computer Programming"
-              value={formData.title}
-              onChange={handleChange}
-              required 
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label fw-bold text-secondary">Author</label>
-            <input 
-              type="text" 
-              name="author"
-              className="form-control" 
-              placeholder="e.g. Donald Knuth"
-              value={formData.author}
-              onChange={handleChange}
-              required 
-            />
+            <label className="form-label small fw-bold text-muted">Book Title</label>
+            <input type="text" name="title" className="form-control" placeholder="Enter book title" value={formData.title} onChange={handleChange} required />
           </div>
           <div className="mb-3">
-            <label className="form-label fw-bold text-secondary">Cover Image URL</label>
-            <input 
-              type="url" 
-              name="image"
-              className="form-control" 
-              placeholder="Paste image link here (https://...)"
-              value={formData.image}
-              onChange={handleChange}
-            />
-            <div className="form-text small">Tip: Right-click an image online and select "Copy image address".</div>
+            <label className="form-label small fw-bold text-muted">Author</label>
+            <input type="text" name="author" className="form-control" placeholder="Enter author name" value={formData.author} onChange={handleChange} required />
           </div>
-
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-muted">Image URL</label>
+            <input type="url" name="image" className="form-control" value={formData.image} onChange={handleChange} placeholder="https://..." />
+          </div>
           <div className="row">
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-bold text-secondary">ISBN</label>
-              <input 
-                type="text" 
-                name="isbn"
-                className="form-control" 
-                placeholder="13-digit code"
-                value={formData.isbn}
-                onChange={handleChange}
-                required 
-              />
+              <label className="form-label small fw-bold text-muted">ISBN (10-13 digits)</label>
+              <input type="text" name="isbn" className="form-control"  placeholder="Enter ISBN" value={formData.isbn} onChange={handleChange} required maxlength="13" minlength="10" pattern="\d*"  title="Please enter a 10 or 13 digit ISBN"/>
             </div>
             <div className="col-md-6 mb-3">
-              <label className="form-label fw-bold text-secondary">Category</label>
-              <select 
-                name="category"
-                className="form-select"
-                value={formData.category}
-                onChange={handleChange}
-              >
+              <label className="form-label small fw-bold text-muted">Category</label>
+              <select name="category" className="form-select" value={formData.category} onChange={handleChange}>
                 <option value="General">General</option>
                 <option value="Technology">Technology</option>
                 <option value="Science">Science</option>
@@ -117,22 +78,11 @@ export default function AddBookForm({ onAddBook }) {
               </select>
             </div>
           </div>
-
           <div className="mb-3">
-            <label className="form-label fw-bold text-secondary">Description</label>
-            <textarea 
-              name="description"
-              className="form-control" 
-              rows="3" 
-              placeholder="Brief summary of the book..."
-              value={formData.description}
-              onChange={handleChange}
-            ></textarea>
+            <label className="form-label small fw-bold text-muted">Description</label>
+            <textarea name="description" className="form-control" placeholder="Enter description" rows="2" value={formData.description} onChange={handleChange}></textarea>
           </div>
-
-          <button type="submit" className="btn btn-primary w-100 py-2 fw-bold shadow-sm">
-            Save to Database
-          </button>
+          <button type="submit" className="btn btn-primary w-100 py-2 fw-bold">Save Book</button>
         </form>
       </div>
     </div>

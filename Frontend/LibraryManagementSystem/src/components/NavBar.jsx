@@ -1,16 +1,36 @@
-// src/components/Navbar.jsx
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow">
-      <div className="container">
-        <Link className="navbar-brand" to="/">📚 LIBRARY MANAGEMENT SYSTEM Portal</Link>
-        <div className="navbar-nav ms-auto">
-          <Link className="nav-link" to="/">Home</Link>
-          <Link className="nav-link" to="/login">Login</Link>
-          <Link className="nav-link" to="/register">Register</Link>
-          <Link className="nav-link btn btn-outline-warning ms-lg-2" to="/admin">Admin</Link>
+      <div className="container-fluid">
+        <Link className="navbar-brand" to="/">📚 Library Management System </Link>
+        <div className="navbar-nav ms-auto align-items-center">
+          <Link className="nav-link text-warning" to="/home">Home</Link>
+          
+          {!user ? (
+            <>
+              <Link className="nav-link" to="/">Login</Link>
+              <Link className="nav-link" to="/register">Register</Link>
+            </>
+          ) : (
+            <>
+              {user.role === 'ADMIN' && (
+                <Link className="nav-link text-warning" to="/admin">Dashboard</Link>
+              )}
+              <Link className="nav-link text-info" to="/profile">👤 {user.firstName}</Link>
+              <button className="btn btn-sm btn-danger ms-2" onClick={handleLogout}>Logout</button>
+            </>
+          )}
         </div>
       </div>
     </nav>

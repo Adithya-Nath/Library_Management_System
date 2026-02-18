@@ -21,19 +21,22 @@ export default function BorrowNowModal({ book, isOpen, onClose, onConfirm }) {
           </div>
 
           <div className="modal-body p-4">
-            <div className="d-flex align-items-center mb-4">
-              <img 
-                src={book.image || 'https://via.placeholder.com/100x150'} 
-                alt={book.title} 
-                className="rounded shadow-sm me-3"
-                style={{ width: '80px', height: '110px', objectFit: 'cover' }}
-              />
-              <div>
-                <h6 className="mb-1 fw-bold">{book.title}</h6>
-                <p className="text-muted mb-0 small">Author: {book.author}</p>
-                <p className="text-muted mb-0 small">ISBN: {book.isbn}</p>
-              </div>
-            </div>
+           <div className="d-flex align-items-center mb-4">
+    <img 
+      /* CHANGE: Use book.imageUrl (which comes from your DB) */
+      /* Fallback to the Unsplash image if imageUrl is null or undefined */
+      src={book.imageUrl || 'https://images.unsplash.com/photo-1543005124-8198f5ac6d7b?w=200'} 
+      alt={book.title} 
+      className="rounded shadow-sm me-3"
+      style={{ width: '80px', height: '110px', objectFit: 'cover' }}
+    />
+    <div>
+      <h6 className="mb-1 fw-bold">{book.title}</h6>
+      {/* Ensure these match your DB property names (e.g., authorName) */}
+      <p className="text-muted mb-0 small">Author: {book.authorName || book.author}</p>
+      <p className="text-muted mb-0 small">ISBN: {book.isbn}</p>
+    </div>
+  </div>
 
             <form>
               <div className="mb-3">

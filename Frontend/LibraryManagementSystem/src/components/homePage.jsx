@@ -1,58 +1,122 @@
-// src/pages/Home.jsx
-import { useState } from 'react';
 import BookCard from '../components/BookCard';
 import BorrowNowModal from './BorrowNowModal';
-import { initialBooks } from './mockData';
+import { useState, useEffect } from 'react'; 
+import api from '../services/Service';
+import MyBorrows from './MyBorrows';
+import { toast } from 'react-toastify';
 
 export default function HomePage() {
-  const [books, setBooks] = useState(initialBooks);
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- NEW: Waitlist Logic ---
-  const handleJoinWaitlist = (book) => {
-    // In the future, replace this with an axios call to your backend
-    alert(`Success! You have been added to the waitlist for "${book.title}". We will notify you when it is available.`);
-    console.log(`User joined waitlist for book ID: ${book.id}`);
-  };
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await api.get('/all');
+        setBooks(response.data); 
+      }  catch (error) {
+         console.error("Error fetching books:", error);
+        toast.error("Could not load books from server."); // <--- USE TOAST
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const openBorrowModal = (book) => {
+    fetchBooks();
+  }, []);
+
+  const handleJoinWaitlist = (book) => {
+  toast.info(`Joined waitlist for "${book.title}".`); // Changed alert to toast.info
+};
+
+ const openBorrowModal = (book) => {
     setSelectedBook(book);
     setIsModalOpen(true);
   };
 
- const handleBorrowConfirm = (bookId, dueDate) => {
-    // Logic to update the state
-    const updatedBooks = books.map(b => 
-      b.id === bookId ? { ...b, isAvailable: false, status: "Issued" } : b
-    );
-    
-    setBooks(updatedBooks);
-    setIsModalOpen(false);
-  };
+// src/pages/HomePage.jsx
+
+const handleBorrowConfirm = async (bookId, dueDate) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const loanData = {
+        bookId: bookId,
+        userId: user.id,
+        returnDate: dueDate
+    };
+
+    try {
+        const response = await api.post('/api/loans/confirm', loanData);
+        
+        // Update local state by changing 'status' to 'Issued'
+        const updatedBooks = books.map(b => 
+            b.id === bookId ? { ...b, status: "Issued" } : b
+        );
+        setBooks(updatedBooks);
+        
+        setIsModalOpen(false);
+       toast.success(`Success! ${response.data}`);
+    } catch (error) {
+        console.error("Loan failed:", error);
+       toast.error(error.response?.data || "Failed to process loan.");
+    }
+};
 
   const filteredBooks = books.filter((book) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      book.title.toLowerCase().includes(searchLower) ||
-      book.author.toLowerCase().includes(searchLower) ||
-      (book.isbn && book.isbn.toLowerCase().includes(searchLower))
+      book.title?.toLowerCase().includes(searchLower) ||
+      book.authorName?.toLowerCase().includes(searchLower) || 
+      (book.isbn && String(book.isbn).includes(searchLower))  
     );
   });
 
+  if (loading) return <div className="text-center mt-5">Loading Library...</div>;
+
   return (
     <div>
-      <div className="bg-light p-4 rounded mb-4 shadow-sm">
-        <input 
-          type="text" 
-          className="form-control form-control-lg" 
-          placeholder="Search by book title, author, or ISBN..." 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
+      {/* 1. Hero Section */}
+      <header className="py-5 bg-dark text-white shadow-sm">
+        <div className="container-fluid px-5 text-center">
+          <h1 className="display-4 fw-bold">Unlock a World of Knowledge</h1>
+          <p className="lead mb-4">Search thousands of titles, manage your borrows, and explore new horizons.</p>
+          
+          {/* Centralized Search Bar */}
+          <div className="row justify-content-center">
+            <div className="col-md-8 col-lg-6">
+              <div className="input-group input-group-lg shadow-sm">
+                <span className="input-group-text bg-white border-end-0">🔍</span>
+                <input 
+                  type="text" 
+                  className="form-control border-start-0" 
+                  placeholder="Search by book title, author, or ISBN..." 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)} 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div className="py-5" style={{ backgroundColor: '#e9ecef' }}>
+      
+      {/* --- NEW SECTION --- */}
+      {!searchTerm && (
+        <MyBorrows 
+          refreshTrigger={isModalOpen} 
+          onReturnSuccess={() => {
+              // Re-fetch the main book list to show the book as "Available" again
+              const fetchBooks = async () => {
+                  const response = await api.get('/all');
+                  setBooks(response.data);
+              };
+              fetchBooks();
+          }} 
         />
-      </div>
-
+      )}
+    <div className="px-4">
       <div className="row g-4">
         {filteredBooks.length > 0 ? (
           filteredBooks.map(book => (
@@ -71,7 +135,8 @@ export default function HomePage() {
           </div>
         )}
       </div>
-
+      </div>
+      </div>
       <BorrowNowModal 
         book={selectedBook} 
         isOpen={isModalOpen} 
