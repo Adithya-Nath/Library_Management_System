@@ -1,10 +1,10 @@
-import BookCard from '../components/BookCard';
-import BorrowNowModal from './BorrowNowModal';
+import BookCard from '../../components/books/BookCard';
+import BorrowNowModal from '../../components/modals/BorrowNowModal';
 import { useState, useEffect } from 'react'; 
-import api from '../services/Service';
+import api from '../../services/Service';
 import MyBorrows from './MyBorrows';
 import { toast } from 'react-toastify';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function HomePage() {
 

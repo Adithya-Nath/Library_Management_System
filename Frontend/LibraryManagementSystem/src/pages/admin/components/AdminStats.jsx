@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/Service';
+import api from '../../../services/Service';
 export default function AdminStats({refreshTrigger}) {
   
   const [statsData, setStatsData] = useState({

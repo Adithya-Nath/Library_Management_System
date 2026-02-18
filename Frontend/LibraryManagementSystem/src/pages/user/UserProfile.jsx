@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import api from '../services/Service';
+import api from '../../services/Service';
 import { toast } from 'react-toastify';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function UserProfile() {
 
@@ -30,7 +30,7 @@ export default function UserProfile() {
       
       login(updatedUser, localStorage.getItem('token'));
       toast.success(response.data || "Profile updated successfully! ✨");
-      
+
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data || "Update failed! Please try again.");

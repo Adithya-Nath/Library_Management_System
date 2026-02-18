@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { ToastContainer ,Slide} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BrowserRouter,Routes,Route,Navigate } from 'react-router-dom';
-import Login from './components/Login'
-import Register from './components/Register'
-import HomePage from './components/homePage';
-import Navbar from './components/NavBar';
-import AdminDashboard from './components/AdminDashboard';
-import UserProfile from './components/UserProfile';
-import { AuthProvider } from './components/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/auth/Login'
+import Register from './pages/auth/Register'
+import HomePage from './pages/user/homePage';
+import Navbar from './components/common/NavBar';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserProfile from './pages/user/UserProfile';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 
 function App() {

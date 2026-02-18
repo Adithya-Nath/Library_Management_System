@@ -1,8 +1,8 @@
 import { useState,useEffect } from 'react';
-import api from '../services/Service';
+import api from '../../services/Service';
 import { Link,useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify'; // 1. Import toast
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
   const [username, setUsername] = useState('');

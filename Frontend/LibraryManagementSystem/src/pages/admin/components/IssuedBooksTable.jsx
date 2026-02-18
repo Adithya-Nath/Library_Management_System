@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/Service';
+import api from '../../../services/Service';
 import { toast } from 'react-toastify';
 
 export default function IssuedBooksTable({ refreshTrigger }) {

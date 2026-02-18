@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import AdminStats from '../components/AdminStats';
-import AddBookForm from '../components/AddBookForm';
-import BookTable from '../components/BookTable';
-import IssuedBooksTable from '../components/IssuedBooksTable'; // 1. Added Import
+import AdminStats from './components/AdminStats';
+import AddBookForm from './components/AddBookForm';
+import BookTable from './components/BookTable';
+import IssuedBooksTable from './components/IssuedBooksTable'; // 1. Added Import
 
 export default function AdminDashboard() {
   const [refreshTrigger, setRefreshTrigger] = useState(false);
