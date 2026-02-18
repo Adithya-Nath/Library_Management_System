@@ -4,10 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 export default function Register() {
+  
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -18,7 +16,10 @@ export default function Register() {
     confirmPassword: '',
     role: 'USER'
   });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -51,7 +52,7 @@ export default function Register() {
   return (
     <div className="container mt-5 mb-5">
       <div className="row justify-content-center">
-        {/* Changed col-lg-8 to make it wider/rectangular */}
+        
         <div className="col-md-10 col-lg-8 card shadow p-4 border-0">
           <h2 className="text-center mb-4 fw-bold text-primary">Create Your Account</h2>
           
@@ -88,7 +89,7 @@ export default function Register() {
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Phone Number</label>
                 <input type="tel" name="phoneNumber" className="form-control" placeholder="+91 0000000000" value={formData.phoneNumber} onChange={handleChange} required maxlength="10" minlength="10" inputMode="numeric"
-    pattern="[0-9]*"/>
+                 pattern="[0-9]*"/>
               </div>
 
               {/* Row 4: Password & Confirm Password */}

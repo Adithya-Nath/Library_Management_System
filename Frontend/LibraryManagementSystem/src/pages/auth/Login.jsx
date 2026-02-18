@@ -1,25 +1,33 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify'; 
 import api from '../../services/Service';
-import { Link,useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify'; // 1. Import toast
 import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // 1. New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, login } = useAuth();
 
   useEffect(() => {
-  setUsername('');
-  setPassword('');
-}, []);
-  
+    if (user) {
+      if (user.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/home');
+      }
+    }
+  }, [user, navigate]);
+
+
+  useEffect(() => {
+    setUsername('');
+    setPassword('');
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,20 +35,23 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      
       const response = await api.post('/login', { username, password });
+      
       const token = response.data["token"]; 
-      const user = response.data["User"];
+      const userData = response.data["User"];
 
-      login(user, token);
-      toast.success(`Welcome back, ${user.firstName}!`);
+      login(userData, token);
+      toast.success(`Welcome back, ${userData.firstName}!`);
 
-      if (user.role === 'ADMIN') {
+      if (userData.role === 'ADMIN') {
         navigate('/admin');
       } else {
         navigate('/home');
       }
     } catch (error) {
-      toast.error(error.response?.data || "Invalid username or password");
+      const errorMsg = error.response?.data?.message || error.response?.data || "Invalid username or password";
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -52,8 +63,9 @@ export default function Login() {
         <h2 className="text-center mb-4 fw-bold text-primary">User Login</h2>
         
         <form onSubmit={handleLogin} autoComplete="off">
+          {/* Prevent browser autofill weirdness */}
           <input type="text" name="prevent_autofill" style={{display: 'none'}} tabIndex="-1" />
-          <input type="password" name="password_fake" style={{display: 'none'}} tabIndex="-1" />
+          
           <div className="mb-3">
             <label className="form-label fw-bold">Username</label>
             <input 
@@ -68,10 +80,9 @@ export default function Login() {
 
           <div className="mb-3">
             <label className="form-label fw-bold">Password</label>
-            {/* 2. Wrap in input-group to add the eye button */}
             <div className="input-group">
               <input 
-                type={showPassword ? "text" : "password"} // 3. Toggle type
+                type={showPassword ? "text" : "password"}
                 className="form-control" 
                 autoComplete="current-password"
                 placeholder="Enter your password" 
@@ -84,7 +95,6 @@ export default function Login() {
                 type="button" 
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {/* 4. Toggle icon based on state */}
                 {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
@@ -92,15 +102,20 @@ export default function Login() {
           
           <button 
             type="submit" 
-            className="btn btn-primary w-100 fw-bold" 
+            className="btn btn-primary w-100 fw-bold py-2" 
             disabled={isLoading}
           >
             {isLoading ? (
-              <span className="spinner-border spinner-border-sm me-2"></span>
-            ) : null}
-            {isLoading ? "Signing In..." : "Sign In"}
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Signing In...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
+
         <div className="text-center mt-3">
           <p className="small mb-0 text-muted">
             Don't have an account?{" "}
