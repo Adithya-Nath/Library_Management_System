@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import api from '../services/Service';
 import { toast } from 'react-toastify';
+import { useAuth } from './AuthContext';
 
 export default function UserProfile() {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
+
+  const { user, login } = useAuth();
+  
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -25,10 +28,9 @@ export default function UserProfile() {
       const updatedUser = { ...user, ...formData };
       delete updatedUser.password;
       
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser); // Update local state to reflect changes
-      
+      login(updatedUser, localStorage.getItem('token'));
       toast.success(response.data || "Profile updated successfully! ✨");
+      
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data || "Update failed! Please try again.");

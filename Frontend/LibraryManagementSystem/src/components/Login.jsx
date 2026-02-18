@@ -2,6 +2,7 @@ import { useState,useEffect } from 'react';
 import api from '../services/Service';
 import { Link,useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify'; // 1. Import toast
+import { useAuth } from './AuthContext';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -11,12 +12,14 @@ export default function Login() {
   // 1. New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   useEffect(() => {
   setUsername('');
   setPassword('');
 }, []);
   
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,13 +31,9 @@ export default function Login() {
       const token = response.data["token"]; 
       const user = response.data["User"];
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      login(user, token);
+      toast.success(`Welcome back, ${user.firstName}!`);
 
-      setUsername('');
-      setPassword('');
-
-     toast.success(`Welcome back, ${user.firstName}!`);
       if (user.role === 'ADMIN') {
         navigate('/admin');
       } else {

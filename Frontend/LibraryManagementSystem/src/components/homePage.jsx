@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import api from '../services/Service';
 import MyBorrows from './MyBorrows';
 import { toast } from 'react-toastify';
+import { useAuth } from './AuthContext';
 
 export default function HomePage() {
+
+  const { user } = useAuth();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,7 +43,7 @@ export default function HomePage() {
 // src/pages/HomePage.jsx
 
 const handleBorrowConfirm = async (bookId, dueDate) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+  
     const loanData = {
         bookId: bookId,
         userId: user.id,
