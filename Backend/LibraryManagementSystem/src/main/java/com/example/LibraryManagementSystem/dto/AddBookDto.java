@@ -14,8 +14,7 @@ public class AddBookDto {
     private String authorName;
     private String category;
     private String description;
-    @Column(unique = true)
-    private long isbn;
+    private Long isbn;
     private String imageUrl;
 
 }

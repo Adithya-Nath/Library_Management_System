@@ -9,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 
@@ -58,7 +55,7 @@ public class AccountController {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(),loginDto.getPassword()));
             AppUser appuser=userRepository.findByUsername(loginDto.getUsername());
             String jwtToken=jwtTokenService.createJwtToken(appuser);
-            response.put("jwt token",jwtToken);
+            response.put("token",jwtToken);
             response.put("User",appuser);
         }
         catch(Exception e){
@@ -66,6 +63,25 @@ public class AccountController {
         }
 
         return  ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/update-profile/{id}")
+    public ResponseEntity<String> updateProfile(@PathVariable Long id, @RequestBody RegisterDto updateDto) {
+        AppUser user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFirstName(updateDto.getFirstName());
+        user.setLastName(updateDto.getLastName());
+        user.setEmailId(updateDto.getEmailId());
+        user.setPhoneNumber(updateDto.getPhoneNumber());
+
+        // Only update password if a new one is provided
+        if (updateDto.getPassword() != null && !updateDto.getPassword().isEmpty()) {
+            user.setPassword(pwdEncoder.encode(updateDto.getPassword()));
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok("Profile updated successfully!");
     }
 
 

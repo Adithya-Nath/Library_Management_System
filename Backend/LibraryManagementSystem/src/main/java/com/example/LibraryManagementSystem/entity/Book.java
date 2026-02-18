@@ -13,15 +13,16 @@ import lombok.NoArgsConstructor;
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
     private String title;
     private String authorName;
     private String category;
     private String description;
     @Column(unique = true)
-    private long isbn;
+    private Long isbn;
     private String imageUrl;
-    private String bookCount;
-    private String status;
+   // private String bookCount;
+    @Column(nullable = false)
+    private String status="Available";
     private boolean isAvailable;
 }
