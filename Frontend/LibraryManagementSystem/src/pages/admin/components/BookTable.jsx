@@ -1,244 +1,205 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../../services/Service';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 
 export default function BookTable({ refreshTrigger, onDataChange }) {
   const [books, setBooks] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [adminSearch, setAdminSearch] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  // Reload books whenever the dashboard signals a change
-  useEffect(() => {
-    loadBooks();
-  }, [refreshTrigger]);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 8;
 
-  const loadBooks = async () => {
+  const loadBooks = useCallback(async (page = 0, query = '') => {
+    setLoading(true);
     try {
-      const response = await api.get('/all');
-      setBooks(response.data);
-    } catch (error) {
-      toast.error("Error loading library inventory.");
-    }
-  };
+      const response = await api.get(`/all?search=${query}&page=${page}&size=${pageSize}`);
+      
+      const { content, totalPages: total, number } = response.data;
 
-  const handleEditClick = (book) => {
-    setEditingId(book.id);
-    // Clone the entire book object to ensure all fields (description, imageUrl, etc.) are captured
-    setEditFormData({ ...book });
-  };
+      // SAFETY CHECK: If the page is empty but we aren't on page 0, go back one page
+      if (content.length === 0 && page > 0) {
+        loadBooks(page - 1, query);
+        return;
+      }
+
+      setBooks(content || []);
+      setTotalPages(total || 0);
+      setCurrentPage(number || 0);
+    } catch (error) {
+      setBooks([]);
+      toast.error("Error loading inventory.");
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize]);
+
+  // Trigger load when dependencies change
+  useEffect(() => {
+    loadBooks(currentPage, adminSearch);
+  }, [refreshTrigger, currentPage, adminSearch, loadBooks]);
 
   const handleSave = async (id) => {
     try {
-      // This sends the full object to your updated Backend PutMapping
       await api.put(`/update/${id}`, editFormData);
       setEditingId(null);
-      toast.success("Book details updated and synced!");
-      if (onDataChange) onDataChange(); // Triggers refresh in Stats/Loan tables
-      loadBooks();
-    } catch (error) {
-      toast.error("Update failed. Please check your data.");
+      toast.success("Updated!");
+      if (onDataChange) onDataChange();
+      loadBooks(currentPage, adminSearch);
+    } catch (e) {
+      toast.error("Update failed.");
     }
   };
 
   const handleDelete = async (id) => {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "This action cannot be undone and will remove the book from inventory.",
+    const result = await Swal.fire({
+      title: 'Delete Book?',
+      text: "Are you sure you want to remove this book?",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#dc3545', // Bootstrap Danger Red
-      cancelButtonColor: '#6c757d',  // Bootstrap Secondary Grey
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await api.delete(`/delete/${id}`);
-          
-          Swal.fire(
-            'Deleted!',
-            'The book has been removed.',
-            'success'
-          );
-
-          if (onDataChange) onDataChange();
-          loadBooks();
-        } catch (error) {
-          toast.error("Could not delete book. It might be currently issued.");
-        }
-      }
+      confirmButtonColor: '#dc3545',
+      confirmButtonText: 'Yes, delete!'
     });
-  };
 
-  // Local filtering for fast admin searching
-  const filteredBooks = books.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    b.isbn.toString().includes(searchTerm) ||
-    b.authorName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/delete/${id}`);
+        // Notify parent to refresh stats
+        if (onDataChange) onDataChange();
+        
+        // Refresh the current page
+        loadBooks(currentPage, adminSearch);
+        
+        Swal.fire('Deleted!', 'Book has been removed.', 'success');
+      } catch (e) {
+        toast.error("Delete failed. The book might be currently issued.");
+      }
+    }
+  };
 
   return (
     <div className="card shadow-sm border-0">
       <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 className="mb-0 fw-bold text-primary">Books Inventory</h5>
-        <div className="input-group w-50">
-          <span className="input-group-text bg-light border-end-0">🔍</span>
+        <div className="input-group w-25 shadow-sm">
+          <span className="input-group-text bg-white border-end-0">🔍</span>
           <input 
             type="text" 
-            className="form-control form-control-sm border-start-0" 
-            placeholder="Search by Title, Author, or ISBN..." 
-            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control border-start-0 shadow-none" 
+            placeholder="Global Search..." 
+            value={adminSearch}
+            onChange={(e) => {
+              setAdminSearch(e.target.value);
+              setCurrentPage(0); // Reset to first page on new search
+            }}
           />
         </div>
       </div>
 
       <div className="table-responsive">
-        <table className="table table-hover align-middle mb-0" style={{ fontSize: '0.85rem' }}>
-          <thead className="table-light">
-            <tr>
-              <th>Cover</th>
-              <th>Book Details</th>
-              <th>ISBN & Category</th>
-              <th>Status</th>
-              <th className="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBooks.length > 0 ? (
-              filteredBooks.map((book) => (
-                <tr key={book.id}>
-                  {/* Column 1: Image */}
-                  <td style={{ width: '80px' }}>
-                    {editingId === book.id ? (
-                      <input 
-                        type="text" 
-                        className="form-control form-control-sm" 
-                        value={editFormData.imageUrl} 
-                        placeholder="Image URL"
-                        onChange={(e) => setEditFormData({...editFormData, imageUrl: e.target.value})} 
-                      />
-                    ) : (
+        {loading && books.length === 0 ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"></div>
+          </div>
+        ) : (
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Cover</th>
+                <th>Book Details</th>
+                <th>ISBN</th>
+                <th>Status</th>
+                <th className="text-end px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {books.length > 0 ? (
+                books.map((book) => (
+                  <tr key={book.id}>
+                    <td>
                       <img 
                         src={book.imageUrl || 'https://via.placeholder.com/45x60'} 
-                        alt="cover" 
-                        className="rounded shadow-sm" 
                         style={{ width: '45px', height: '60px', objectFit: 'cover' }} 
+                        className="rounded shadow-sm" 
+                        alt="" 
                       />
-                    )}
-                  </td>
-
-                  {/* Column 2: Details (Title, Author, Description) */}
-                  <td style={{ maxWidth: '250px' }}>
-                    {editingId === book.id ? (
-                      <>
+                    </td>
+                    <td>
+                      {editingId === book.id ? (
                         <input 
-                          type="text" 
-                          className="form-control form-control-sm mb-1 fw-bold" 
+                          className="form-control form-control-sm" 
                           value={editFormData.title} 
                           onChange={(e) => setEditFormData({...editFormData, title: e.target.value})} 
                         />
-                        <input 
-                          type="text" 
-                          className="form-control form-control-sm mb-1" 
-                          value={editFormData.authorName} 
-                          onChange={(e) => setEditFormData({...editFormData, authorName: e.target.value})} 
-                        />
-                        <textarea 
-                          className="form-control form-control-sm" 
-                          rows="2"
-                          value={editFormData.description} 
-                          onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                          placeholder="Short description..."
-                        />
-                      </>
-                    ) : (
-                      <div title={book.description} style={{ cursor: 'help' }}>
-                        <div className="fw-bold text-dark">{book.title}</div>
-                        <div className="text-muted small">by {book.authorName}</div>
-                        <div className="text-truncate text-secondary extra-small" style={{ fontSize: '0.7rem' }}>
-                          {book.description ? book.description.substring(0, 40) + "..." : "No description"}
-                        </div>
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Column 3: ISBN & Category */}
-                  <td>
-                    {editingId === book.id ? (
-                      <>
-                        <input 
-                          type="number" 
-                          className="form-control form-control-sm mb-1" 
-                          value={editFormData.isbn} 
-                          onChange={(e) => setEditFormData({...editFormData, isbn: e.target.value})} 
-                        />
-                        <select 
-                          className="form-select form-select-sm" 
-                          value={editFormData.category} 
-                          onChange={(e) => setEditFormData({...editFormData, category: e.target.value})}
-                        >
-                          <option value="General">General</option>
-                          <option value="Technology">Technology</option>
-                          <option value="Science">Science</option>
-                          <option value="Fiction">Fiction</option>
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-dark">{book.isbn}</div>
-                        <span className="badge bg-light text-secondary border fw-normal">{book.category}</span>
-                      </>
-                    )}
-                  </td>
-
-                  {/* Column 4: Status */}
-                  <td>
-                    {editingId === book.id ? (
-                      <select 
-                        className="form-select form-select-sm" 
-                        value={editFormData.status} 
-                        onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Issued">Issued</option>
-                        <option value="Damaged">Damaged</option>
-                        <option value="Lost">Lost</option>
-                      </select>
-                    ) : (
+                      ) : (
+                        <>
+                          <div className="fw-bold">{book.title}</div>
+                          <div className="text-muted small">{book.authorName}</div>
+                        </>
+                      )}
+                    </td>
+                    <td>{book.isbn}</td>
+                    <td>
                       <span className={`badge rounded-pill ${book.status === 'Available' ? 'bg-success-subtle text-success border border-success' : 'bg-warning-subtle text-dark border border-warning'}`}>
                         {book.status}
                       </span>
-                    )}
-                  </td>
-
-                  {/* Column 5: Actions */}
-                  <td className="text-end">
-                    {editingId === book.id ? (
-                      <div className="btn-group">
-                        <button className="btn btn-sm btn-success" onClick={() => handleSave(book.id)}>Save</button>
-                        <button className="btn btn-sm btn-light border" onClick={() => setEditingId(null)}>Cancel</button>
-                      </div>
-                    ) : (
-                      <div className="btn-group">
-                        <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditClick(book)}>Edit</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(book.id)}>Delete</button>
-                      </div>
-                    )}
-                  </td>
+                    </td>
+                    <td className="text-end px-4">
+                      {editingId === book.id ? (
+                        <div className="btn-group shadow-sm">
+                          <button className="btn btn-sm btn-success" onClick={() => handleSave(book.id)}>Save</button>
+                          <button className="btn btn-sm btn-light border" onClick={() => setEditingId(null)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="btn-group shadow-sm">
+                          <button 
+                            className="btn btn-sm btn-outline-primary" 
+                            onClick={() => { setEditingId(book.id); setEditFormData({...book}); }}
+                          >
+                            Edit
+                          </button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(book.id)}>
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-muted">No records found.</td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center py-5 text-muted">
-                  No books found in the inventory.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="card-footer bg-white d-flex justify-content-center py-3">
+          <nav>
+            <ul className="pagination pagination-sm mb-0 shadow-sm">
+              <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => prev - 1)}>Prev</button>
+              </li>
+              {[...Array(totalPages)].map((_, i) => (
+                <li key={i} className={`page-item ${currentPage === i ? 'active' : ''}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(i)}>{i + 1}</button>
+                </li>
+              ))}
+              <li className={`page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => prev + 1)}>Next</button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
     </div>
   );
 }
