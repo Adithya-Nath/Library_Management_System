@@ -1,7 +1,8 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function Navbar() {
+// 1. Accept onToggleSidebar prop
+export default function Navbar({ onToggleSidebar }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -10,7 +11,6 @@ export default function Navbar() {
     navigate('/');
   };
 
-  // This function returns Bootstrap classes based on whether the link is active
   const getLinkClasses = (isActive, defaultColor = "text-secondary") => {
     return `nav-link ${isActive ? "text-white fw-bold border-bottom border-warning" : defaultColor}`;
   };
@@ -18,7 +18,21 @@ export default function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow">
       <div className="container-fluid">
+        
+        {/* 2. Toggle Button - Only visible if user is logged in */}
+        {user && (
+          <button 
+            className="btn btn-outline-light border-0 me-2" 
+            type="button" 
+            onClick={onToggleSidebar}
+            aria-label="Toggle navigation"
+          >
+            <span className="fs-4">☰</span>
+          </button>
+        )}
+
         <Link className="navbar-brand" to="/">📚 Library Management System </Link>
+        
         <div className="navbar-nav ms-auto align-items-center">
           
           <NavLink 

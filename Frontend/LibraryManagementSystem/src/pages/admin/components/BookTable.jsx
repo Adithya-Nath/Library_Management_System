@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../../services/Service';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 export default function BookTable({ refreshTrigger, onDataChange }) {
   const [books, setBooks] = useState([]);
@@ -42,16 +43,33 @@ export default function BookTable({ refreshTrigger, onDataChange }) {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this book? This action cannot be undone.")) {
-      try {
-        await api.delete(`/delete/${id}`);
-        toast.success("Book removed from inventory.");
-        if (onDataChange) onDataChange();
-        loadBooks();
-      } catch (error) {
-        toast.error("Could not delete book. It might be currently issued.");
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "This action cannot be undone and will remove the book from inventory.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545', // Bootstrap Danger Red
+      cancelButtonColor: '#6c757d',  // Bootstrap Secondary Grey
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await api.delete(`/delete/${id}`);
+          
+          Swal.fire(
+            'Deleted!',
+            'The book has been removed.',
+            'success'
+          );
+
+          if (onDataChange) onDataChange();
+          loadBooks();
+        } catch (error) {
+          toast.error("Could not delete book. It might be currently issued.");
+        }
       }
-    }
+    });
   };
 
   // Local filtering for fast admin searching

@@ -1,87 +1,62 @@
-import BookCard from '../../components/books/BookCard';
-import BorrowNowModal from '../../components/modals/BorrowNowModal';
 import { useState, useEffect } from 'react'; 
 import api from '../../services/Service';
-import MyBorrows from './MyBorrows';
-import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
+import MyBorrows from './MyBorrows';
+import BookCard from '../../components/books/BookCard';
+import BorrowNowModal from '../../components/modals/BorrowNowModal';
 
 export default function HomePage() {
-
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBook, setSelectedBook] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const response = await api.get('/all');
-        setBooks(response.data); 
-      }  catch (error) {
-         console.error("Error fetching books:", error);
-        toast.error("Could not load books from server."); // <--- USE TOAST
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBooks();
   }, []);
 
-  const handleJoinWaitlist = (book) => {
-  toast.info(`Joined waitlist for "${book.title}".`); // Changed alert to toast.info
-};
-
- const openBorrowModal = (book) => {
-    setSelectedBook(book);
-    setIsModalOpen(true);
+  const fetchBooks = async () => {
+    try {
+      const response = await api.get('/all');
+      setBooks(response.data); 
+    } catch (error) {
+      toast.error("Could not load books.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-// src/pages/HomePage.jsx
-
-const handleBorrowConfirm = async (bookId, dueDate) => {
-  
-    const loanData = {
-        bookId: bookId,
+  const handleBorrowConfirm = async (bookId, dueDate) => {
+    try {
+      await api.post('/api/loans/confirm', {
+        bookId,
         userId: user.id,
         returnDate: dueDate
-    };
-
-    try {
-        const response = await api.post('/api/loans/confirm', loanData);
-        
-        // Update local state by changing 'status' to 'Issued'
-        const updatedBooks = books.map(b => 
-            b.id === bookId ? { ...b, status: "Issued" } : b
-        );
-        setBooks(updatedBooks);
-        
-        setIsModalOpen(false);
-       toast.success(`Success! ${response.data}`);
+      });
+      
+      setBooks(prev => prev.map(b => b.id === bookId ? { ...b, status: "Issued" } : b));
+      setIsModalOpen(false);
+      setRefreshCount(prev => prev + 1); // Trigger MyBorrows
+      toast.success("Book borrowed successfully!");
     } catch (error) {
-        console.error("Loan failed:", error);
-       toast.error(error.response?.data || "Failed to process loan.");
+      toast.error(error.response?.data || "Borrowing failed.");
     }
-};
+  };
 
-  const filteredBooks = books.filter((book) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      book.title?.toLowerCase().includes(searchLower) ||
-      book.authorName?.toLowerCase().includes(searchLower) || 
-      (book.isbn && String(book.isbn).includes(searchLower))  
-    );
-  });
+  const filteredBooks = books.filter(b => 
+    b.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.authorName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  if (loading) return <div className="text-center mt-5">Loading Library...</div>;
+  if (loading) return <div className="text-center mt-5">Loading...</div>;
 
   return (
-    <div>
-      {/* 1. Hero Section */}
-      <header className="py-5 bg-dark text-white shadow-sm">
+    <div className="bg-light min-vh-100">
+     <header className="py-5 bg-dark text-white shadow-sm">
         <div className="container-fluid px-5 text-center">
           <h1 className="display-4 fw-bold">Unlock a World of Knowledge</h1>
           <p className="lead mb-4">Search thousands of titles, manage your borrows, and explore new horizons.</p>
@@ -103,43 +78,24 @@ const handleBorrowConfirm = async (bookId, dueDate) => {
           </div>
         </div>
       </header>
-      <div className="py-5" style={{ backgroundColor: '#e9ecef' }}>
-      
-      {/* --- NEW SECTION --- */}
-      {!searchTerm && (
-        <MyBorrows 
-          refreshTrigger={isModalOpen} 
-          onReturnSuccess={() => {
-              // Re-fetch the main book list to show the book as "Available" again
-              const fetchBooks = async () => {
-                  const response = await api.get('/all');
-                  setBooks(response.data);
-              };
-              fetchBooks();
-          }} 
-        />
-      )}
-    <div className="px-4">
-      <div className="row g-4">
-        {filteredBooks.length > 0 ? (
-          filteredBooks.map(book => (
-            <div className="col-md-4" key={book.id}>
-              {/* --- CHANGE: Pass onWaitlist here --- */}
-              <BookCard 
-                book={book} 
-                onBorrow={() => openBorrowModal(book)} 
-                onWaitlist={handleJoinWaitlist} 
-              />
-            </div>
-          ))
-        ) : (
-          <div className="col-12 text-center py-5">
-            <p className="text-muted fs-4">No books found matching "{searchTerm}"</p>
+
+      <div className="py-4">
+        {!searchTerm && <MyBorrows refreshTrigger={refreshCount} onReturnSuccess={fetchBooks} />}
+        
+        <div className="container-fluid px-5">
+          <div className="row g-4">
+            {filteredBooks.map(book => (
+              <div className="col-md-3" key={book.id}>
+                <BookCard 
+                  book={book} 
+                  onBorrow={() => { setSelectedBook(book); setIsModalOpen(true); }} 
+                />
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
-      </div>
-      </div>
+
       <BorrowNowModal 
         book={selectedBook} 
         isOpen={isModalOpen} 

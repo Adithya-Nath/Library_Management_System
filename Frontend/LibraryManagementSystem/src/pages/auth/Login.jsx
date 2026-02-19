@@ -23,7 +23,6 @@ export default function Login() {
     }
   }, [user, navigate]);
 
-
   useEffect(() => {
     setUsername('');
     setPassword('');
@@ -35,7 +34,6 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      
       const response = await api.post('/login', { username, password });
       
       const token = response.data["token"]; 
@@ -58,71 +56,72 @@ export default function Login() {
   };
 
   return (
-    <div className="row justify-content-center mt-5 ">
-      <div className="col-md-4 card shadow p-4 border-0">
-        <h2 className="text-center mb-4 fw-bold text-primary">User Login</h2>
-        
-        <form onSubmit={handleLogin} autoComplete="off">
-          {/* Prevent browser autofill weirdness */}
-          <input type="text" name="prevent_autofill" style={{display: 'none'}} tabIndex="-1" />
+    <div className="container"> {/* Added container wrapper to enable centering */}
+      <div className="row justify-content-center mt-5">
+        <div className="col-md-5 col-lg-4 card shadow p-4 border-0">
+          <h2 className="text-center mb-4 fw-bold text-primary">User Login</h2>
           
-          <div className="mb-3">
-            <label className="form-label fw-bold">Username</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="Enter your username" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)} 
-              required
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label fw-bold">Password</label>
-            <div className="input-group">
+          <form onSubmit={handleLogin} autoComplete="off">
+            <input type="text" name="prevent_autofill" style={{display: 'none'}} tabIndex="-1" />
+            
+            <div className="mb-3">
+              <label className="form-label fw-bold">Username</label>
               <input 
-                type={showPassword ? "text" : "password"}
+                type="text" 
                 className="form-control" 
-                autoComplete="current-password"
-                placeholder="Enter your password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="Enter your username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)} 
                 required
               />
-              <button 
-                className="btn btn-outline-secondary" 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
             </div>
-          </div>
-          
-          <button 
-            type="submit" 
-            className="btn btn-primary w-100 fw-bold py-2" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2"></span>
-                Signing In...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
 
-        <div className="text-center mt-3">
-          <p className="small mb-0 text-muted">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary fw-bold text-decoration-none">
-              Register here
-            </Link>
-          </p>
+            <div className="mb-3">
+              <label className="form-label fw-bold">Password</label>
+              <div className="input-group">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  className="form-control" 
+                  autoComplete="current-password"
+                  placeholder="Enter your password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required
+                />
+                <button 
+                  className="btn btn-outline-secondary" 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="btn btn-primary w-100 fw-bold py-2" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
+
+          <div className="text-center mt-3">
+            <p className="small mb-0 text-muted">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-primary fw-bold text-decoration-none">
+                Register here
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

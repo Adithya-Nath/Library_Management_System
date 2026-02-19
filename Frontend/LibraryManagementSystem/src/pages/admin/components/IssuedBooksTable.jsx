@@ -9,6 +9,7 @@ export default function IssuedBooksTable({ refreshTrigger }) {
 
   const fetchIssuedBooks = async () => {
     try {
+      // This now receives the flattened IssuedBookResponseDto list
       const response = await api.get('/api/loans/all-issued');
       setIssuedBooks(response.data);
     } catch (error) {
@@ -21,28 +22,28 @@ export default function IssuedBooksTable({ refreshTrigger }) {
 
   useEffect(() => {
     fetchIssuedBooks();
-  }, [refreshTrigger]); // Re-fetch when dashboard signals a change
+  }, [refreshTrigger]);
 
   const handleAdminReturn = async (loanId) => {
     if (!window.confirm("Confirm this book has been physically returned?")) return;
     try {
       await api.post(`/api/loans/return/${loanId}`);
       toast.success("Book marked as Available.");
-      fetchIssuedBooks(); // Refresh list
+      fetchIssuedBooks(); 
     } catch (error) {
       toast.error("Failed to process return.");
     }
   };
 
-  // --- SEARCH LOGIC ---
+  // --- UPDATED SEARCH LOGIC ---
   const filteredLoans = issuedBooks.filter((item) => {
     const search = searchTerm.toLowerCase();
-    const fullName = `${item.user.firstName} ${item.user.lastName}`.toLowerCase();
+    // Using flat DTO properties: studentName and bookTitle
     return (
-      fullName.includes(search) ||
-      item.user.username.toLowerCase().includes(search) ||
-      item.book.title.toLowerCase().includes(search) ||
-      item.book.isbn.toString().includes(search)
+      item.studentName?.toLowerCase().includes(search) ||
+      item.username?.toLowerCase().includes(search) ||
+      item.bookTitle?.toLowerCase().includes(search) ||
+      (item.bookId && String(item.bookId).includes(search))
     );
   });
 
@@ -52,7 +53,6 @@ export default function IssuedBooksTable({ refreshTrigger }) {
     <div className="card shadow-sm border-0">
       <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
         <h5 className="mb-0 fw-bold">Currently Issued Books</h5>
-        {/* Search Bar inside Header */}
         <div className="input-group w-50">
           <span className="input-group-text bg-white border-end-0">🔍</span>
           <input 
@@ -84,12 +84,14 @@ export default function IssuedBooksTable({ refreshTrigger }) {
                 return (
                   <tr key={item.id}>
                     <td>
-                      <div className="fw-bold">{item.book.title}</div>
-                      <small className="text-muted">ISBN: {item.book.isbn}</small>
+                      {/* item.bookTitle from DTO */}
+                      <div className="fw-bold">{item.bookTitle}</div>
+                      <small className="text-muted">ID: {item.bookId}</small>
                     </td>
                     <td>
-                      <div className="fw-bold text-dark">{item.user.firstName} {item.user.lastName}</div>
-                      <small className="text-secondary">@{item.user.username}</small>
+                      {/* item.studentName from DTO */}
+                      <div className="fw-bold text-dark">{item.studentName}</div>
+                      <small className="text-secondary">@{item.username}</small>
                     </td>
                     <td>{item.issueDate}</td>
                     <td className={isOverdue && item.status === 'Active' ? "text-danger fw-bold" : ""}>

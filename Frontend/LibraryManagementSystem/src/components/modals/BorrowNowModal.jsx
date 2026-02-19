@@ -1,12 +1,18 @@
-// src/components/BorrowNowModal.jsx
 import { useState } from 'react';
 
 export default function BorrowNowModal({ book, isOpen, onClose, onConfirm }) {
-  // 1. Set a default return date (e.g., 14 days from today)
-  const defaultReturnDate = new Date();
-  defaultReturnDate.setDate(defaultReturnDate.getDate() + 14);
+  // --- DATE LOGIC START ---
+  const today = new Date();
+  const twoWeeksLater = new Date();
+  twoWeeksLater.setDate(today.getDate() + 14);
+
+  // Format to YYYY-MM-DD for the HTML date input
+  const minDateStr = today.toISOString().split('T')[0];
+  const maxDateStr = twoWeeksLater.toISOString().split('T')[0];
   
-  const [returnDate, setReturnDate] = useState(defaultReturnDate.toISOString().split('T')[0]);
+  // Default the state to the maximum allowed date (2 weeks)
+  const [returnDate, setReturnDate] = useState(maxDateStr);
+  // --- DATE LOGIC END ---
 
   if (!isOpen || !book) return null;
 
@@ -21,22 +27,19 @@ export default function BorrowNowModal({ book, isOpen, onClose, onConfirm }) {
           </div>
 
           <div className="modal-body p-4">
-           <div className="d-flex align-items-center mb-4">
-    <img 
-      /* CHANGE: Use book.imageUrl (which comes from your DB) */
-      /* Fallback to the Unsplash image if imageUrl is null or undefined */
-      src={book.imageUrl || 'https://images.unsplash.com/photo-1543005124-8198f5ac6d7b?w=200'} 
-      alt={book.title} 
-      className="rounded shadow-sm me-3"
-      style={{ width: '80px', height: '110px', objectFit: 'cover' }}
-    />
-    <div>
-      <h6 className="mb-1 fw-bold">{book.title}</h6>
-      {/* Ensure these match your DB property names (e.g., authorName) */}
-      <p className="text-muted mb-0 small">Author: {book.authorName || book.author}</p>
-      <p className="text-muted mb-0 small">ISBN: {book.isbn}</p>
-    </div>
-  </div>
+            <div className="d-flex align-items-center mb-4">
+              <img 
+                src={book.imageUrl || 'https://images.unsplash.com/photo-1543005124-8198f5ac6d7b?w=200'} 
+                alt={book.title} 
+                className="rounded shadow-sm me-3"
+                style={{ width: '80px', height: '110px', objectFit: 'cover' }}
+              />
+              <div>
+                <h6 className="mb-1 fw-bold">{book.title}</h6>
+                <p className="text-muted mb-0 small">Author: {book.authorName || book.author}</p>
+                <p className="text-muted mb-0 small">ISBN: {book.isbn}</p>
+              </div>
+            </div>
 
             <form>
               <div className="mb-3">
@@ -45,9 +48,14 @@ export default function BorrowNowModal({ book, isOpen, onClose, onConfirm }) {
                   type="date" 
                   className="form-control" 
                   value={returnDate}
+                  min={minDateStr} // Disables past dates
+                  max={maxDateStr} // Disables dates beyond 2 weeks
                   onChange={(e) => setReturnDate(e.target.value)}
+                  required
                 />
-                <div className="form-text">Standard loan period is 14 days.</div>
+                <div className="form-text text-primary small mt-1">
+                  * Maximum allowed borrow period is 14 days.
+                </div>
               </div>
 
               <div className="alert alert-info py-2 small mb-0">
