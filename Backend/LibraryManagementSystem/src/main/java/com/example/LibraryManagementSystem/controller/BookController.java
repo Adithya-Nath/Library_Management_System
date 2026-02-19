@@ -9,6 +9,7 @@ import com.example.LibraryManagementSystem.repository.IssuedBookRepo;
 import com.example.LibraryManagementSystem.repository.UserRepo;
 import com.example.LibraryManagementSystem.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +43,15 @@ public class BookController {
     }
 
     @GetMapping("/all")
-    public List<Book> getAllBooks(){
-       return bookService.viewAllBooks();
+    public ResponseEntity<Page<Book>> getAllBooks(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size
+    ) {
+        if (search.isEmpty()) {
+            return ResponseEntity.ok(bookService.viewAllBooks(page, size));
+        }
+        return ResponseEntity.ok(bookService.searchBooks(search, page, size));
     }
 
     @GetMapping("/stats")
